@@ -1,0 +1,49 @@
+# BioPolymer1_Chain
+
+variable T equal 500.0
+dimension 3
+boundary p p p
+atom_style full
+units real
+
+pair_style   lj/cut/coul/long 10
+pair_modify   mix arithmetic #
+bond_style   harmonic
+angle_style   harmonic
+dihedral_style   opls
+improper_style   cvff
+special_bonds   amber
+# There 3 coefficients (a,b,c) a: 1-2 atom pair reaction, b: 1-3 reaction, c: 1-4 reaction
+# The amber keyword sets the 3 coefficients to 0, 0, 1/2 for LJ interactions and to 0, 0, 5/6 for Coulombic interactions.
+# The charmm keyword sets the 3 coefficients to 0, 0, 0 for both LJ and Coulombic interactions.
+kspace_style pppm 1.0e-4
+# A value of 1.0 means include the full interaction; a value of 0.0 means exclude it completely.
+neighbor  2.0 bin
+# It can be repeated if needed.
+neigh_modify every 1 delay 0 check yes
+
+read_data NCN.data
+
+variable mytemp equal temp
+
+#Obligation 
+
+thermo 1000
+#thermo_style    custom step temp press pe ke etotal lx ly lz pxx pyy pzz
+dump            myDump all atom 2000 N3M_re_135.dump
+
+#Equilibration Stage
+minimize 1.0e-4 1.0e-6 100 1000
+# etol fol maxiter maxeval
+
+fix 1 all nvt temp $T $T 100.0 # 100.0: check the temperature
+fix 2 all langevin $T $T 10.0 153
+#fix_modify 2 temp newT
+
+timestep 1.0
+#fs
+run 100000
+
+write_data NCN.data
+
+print "All Done"
