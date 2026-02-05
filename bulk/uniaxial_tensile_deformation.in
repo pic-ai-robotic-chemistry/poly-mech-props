@@ -1,0 +1,110 @@
+# NO5
+
+variable T equal 50.0
+variable T0 equal 300.0
+variable rate equal 5
+
+dimension 3
+boundary p p p
+atom_style charge
+units real
+
+#pair_style reax/c NULL
+pair_style reaxff ./potentials/control.reax_c.rdx lgvdw yes
+special_bonds   amber
+
+read_data NO5M_binf_5.data
+#read_data NO5M_deform_5_5.data
+
+pair_coeff * * ./potentials/ffield.reax.old_lg H O C N
+
+neighbor        2.5 bin
+neigh_modify    every 1 delay 0 check yes
+reset_timestep 0
+
+compute   reax all pair reaxff
+
+thermo 1000
+thermo_style custom step temp etotal density lx pxx ly pyy lz pzz 
+
+fix pre1 all qeq/reaxff 1 0.0 10.0 1.0e-6 reaxff
+fix pre2 all reaxff/bonds 100 bonds.reaxff
+
+#min_style cg
+#minimize 1e-6 1e-8 100 1000
+#run 0
+
+dump myDump1 all atom 5000 NO5M_deform_5_trj_2.dump
+
+variable s equal 150/1000000/3
+variable myrho equal density
+variable mylx equal lx
+variable myly equal ly
+variable mylz equal lz
+#variable myp equal pxx
+#variable myp equal pyy
+variable myp equal pzz
+
+#variable i loop 4
+#label loop_1
+
+compute newT all temp/partial 0 1 1
+fix 1 all langevin 300 300 100.0 63153
+fix 2 all nph x 0.0 0.0 2000.0 y 0.0 0.0 2000.0
+fix_modify 1 temp newT
+
+print "Deformation Round 2"
+
+#unfix 3c
+#unfix 4c
+fix df all deform 1 z vel $s remap v units box
+
+fix dta all ave/time 50 5 1000 v_myrho v_mylx v_myly v_mylz v_myp file NO5M_deform_5_6.dat
+
+timestep 0.1
+run 500000
+write_data NO5M_deform_5_6.data
+
+fix df all deform 1 z vel $s remap v units box
+
+fix dta all ave/time 50 5 1000 v_myrho v_mylx v_myly v_mylz v_myp file NO5M_deform_5_7.dat
+
+timestep 0.1
+run 500000
+write_data NO5M_deform_5_7.data
+
+#fix 1 all langevin 300 300 100.0 309521
+#fix 2 all nph iso 1.0 1.0 2000.0
+fix df all deform 1 z vel $s remap v units box
+
+fix dta all ave/time 50 5 1000 v_myrho v_mylx v_myly v_mylz v_myp file NO5M_deform_5_8.dat
+
+timestep 0.1
+run 500000
+write_data NO5M_deform_5_8.data
+
+#fix 1 all langevin 300 300 100.0 309521
+#fix 2 all nph iso 1.0 1.0 2000.0
+fix df all deform 1 z vel $s remap v units box
+
+fix dta all ave/time 50 5 1000 v_myrho v_mylx v_myly v_mylz v_myp file NO5M_deform_5_9.dat
+
+timestep 0.1
+run 500000
+write_data NO5M_deform_5_9.data
+
+#fix 1 all langevin 300 300 100.0 309521
+#fix 2 all nph iso 1.0 1.0 2000.0
+fix df all deform 1 z vel $s remap v units box
+
+fix dta all ave/time 50 5 1000 v_myrho v_mylx v_myly v_mylz v_myp file NO5M_deform_5_10.dat
+
+timestep 0.1
+run 500000
+write_data NO5M_deform_5_10.data
+
+next i
+jump SELF loop_1
+
+print "6-10 Done!"
+
